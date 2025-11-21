@@ -17,7 +17,7 @@ pub fn forward_full(m: &mut Model, tokens: &[usize]) -> usize {
 
     for l in 0..LAYERS {
         let w = &m.layers[l];
-        let a = attn_layer(w, &x);
+        let a = attn_layer(w, &x, n);
         for i in 0..D_MODEL {
             x[i] += a[i];
         }
