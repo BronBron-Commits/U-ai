@@ -1,7 +1,8 @@
+mod model;
 mod gen_model;
 mod infer;
 
-use infer::{load, infer};
+use infer::{load_model, run_forward};
 
 fn main() {
     if !std::path::Path::new("toy_transformer.tmod").exists() {
@@ -9,12 +10,12 @@ fn main() {
         gen_model::generate();
     }
 
-    let model = load("toy_transformer.tmod");
+    let mut model = load_model("toy_transformer.tmod");
 
-    let mut tokens = vec![0]; // "hello"
+    let mut tokens = vec![b'h' as usize];
     for _ in 0..20 {
-        let next = infer(&model, &tokens);
-        println!("> {}", model.vocab[next]);
+        let next = run_forward(&mut model, &tokens);
+        println!("> {}", next);
         tokens.push(next);
     }
 }
