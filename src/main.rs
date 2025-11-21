@@ -1,21 +1,18 @@
 mod model;
-mod gen_model;
-mod infer;
+mod io;
+mod layer;
 
-use infer::{load_model, run_forward};
+use model::Model;
+use io::load_or_init_model;
+use layer::forward_full;
 
 fn main() {
-    if !std::path::Path::new("toy_transformer.tmod").exists() {
-        println!("Generating transformer model...");
-        gen_model::generate();
-    }
+    let mut model = load_or_init_model("bytes.tmod");
 
-    let mut model = load_model("toy_transformer.tmod");
-
-    let mut tokens = vec![b'h' as usize];
+    let mut ctx = vec![b'H' as usize];
     for _ in 0..20 {
-        let next = run_forward(&mut model, &tokens);
+        let next = forward_full(&mut model, &ctx);
         println!("> {}", next);
-        tokens.push(next);
+        ctx.push(next);
     }
 }
