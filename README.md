@@ -1,25 +1,24 @@
 U-ai
 
-A small Transformer engine written in pure Rust.  
-Runs fully offline with no external ML crates or models.
+U-ai is a fully modular Transformer inference engine written in Rust. It performs a single-token forward pass using a simplified architecture with support for multi-layer attention and feedforward logic. All computations are handled locally with no dependencies on external runtimes.
 
-Current features:
-- custom .tmod model format
-- embeddings + positional embeddings
-- multi-head attention
-- pre-LayerNorm
-- residual connections
-- feed-forward layer
-- softmax decoding
-- works offline in Termux or Linux
+Directory structure:
+
+src/
+- main.rs               - Entry point
+- model/                - Model definition and parameters
+- io/                   - Save and load weights to file
+- layer/                - Neural network layers
+  - attention/          - Q, K, V projections and attention logic
+  - ff.rs               - Feedforward network
+  - residual.rs         - Residual connection logic
 
 How to run:
-cargo build --release
-./target/release/local_ai
 
-If the model file is missing, a new one is generated.
+1. Build the project:
+   cargo build --release
 
-Next steps:
-- causal masking
-- training loop
-- tokenizer
+2. Run the binary:
+   ./target/release/local_ai
+
+This will output a stream of sampled token IDs based on a randomly initialized model. Training and decoding logic are not yet implemented.
