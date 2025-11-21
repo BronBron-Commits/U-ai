@@ -1,27 +1,25 @@
 U-ai
 
-A simple transformer AI engine written in pure Rust. No external models, no machine learning crates, everything built from scratch.
+A small Transformer engine written in pure Rust.  
+Runs fully offline with no external ML crates or models.
 
 Current features:
-- custom .tmod model file
-- random tiny transformer
-- token embeddings
-- positional embeddings
-- single-head attention
-- feed-forward network
+- custom .tmod model format
+- embeddings + positional embeddings
+- multi-head attention
+- pre-LayerNorm
+- residual connections
+- feed-forward layer
 - softmax decoding
-- autoregressive generation
-- works offline in Termux
+- works offline in Termux or Linux
 
 How to run:
 cargo build --release
 ./target/release/local_ai
 
-If the model file is missing, it generates a new one.
+If the model file is missing, a new one is generated.
 
 Next steps:
-- layernorm and residuals
-- multi-head attention
 - causal masking
-- tokenizer and training
-- better model tools
+- training loop
+- tokenizer
