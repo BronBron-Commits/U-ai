@@ -81,6 +81,23 @@ pub fn load(path: &str) -> Model {
     }
 }
 
+fn layer_norm(x: &mut [f32]) {
+    let n = x.len() as f32;
+    let mean = x.iter().sum::<f32>() / n;
+    let mut var = 0.0;
+    for v in x.iter() {
+        let d = v - mean;
+        var += d * d;
+    }
+    var /= n;
+
+    let inv = 1.0 / (var + 1e-5).sqrt();
+
+    for v in x.iter_mut() {
+        *v = (*v - mean) * inv;
+    }
+}
+
 fn matmul(a: &[f32], m: &Vec<Vec<f32>>) -> Vec<f32> {
     let mut out = vec![0.0; m[0].len()];
     for i in 0..a.len() {
@@ -107,16 +124,18 @@ fn softmax(v: &mut [f32]) {
 pub fn infer(model: &Model, tokens: &[usize]) -> usize {
     let t = tokens.len() - 1;
 
-    // embedding + position
     let mut x = vec![0.0; model.d_model];
     for i in 0..model.d_model {
         x[i] = model.tok_emb[tokens[t]][i] + model.pos_emb[t][i];
     }
 
-    // ----------------------------
-    // ATTENTION
-    // ----------------------------
-    let qkv = matmul(&x, &model.w_qkv);
+    // --------------------------
+    // Pre-norm → Attention
+    // --------------------------
+    let mut x_norm = x.clone();
+    layer_norm(&mut x_norm);
+
+    let qkv = matmul(&x_norm, &model.w_qkv);
 
     let d = model.d_model;
     let heads = model.heads;
@@ -151,27 +170,28 @@ pub fn infer(model: &Model, tokens: &[usize]) -> usize {
         }
     }
 
-    // output projection
     let proj = matmul(&att_out, &model.w_out);
 
-    // RESIDUAL 1: x + Attention(x)
+    // Residual 1
     let mut x1 = vec![0.0; d];
     for i in 0..d {
         x1[i] = x[i] + proj[i];
     }
 
-    // ----------------------------
-    // FEED-FORWARD LAYER
-    // ----------------------------
+    // --------------------------
+    // Pre-norm → Feed-forward
+    // --------------------------
+    let mut x1_norm = x1.clone();
+    layer_norm(&mut x1_norm);
 
-    let mut ff1 = matmul(&x1, &model.w1);
+    let mut ff1 = matmul(&x1_norm, &model.w1);
     for v in ff1.iter_mut() {
         *v = v.tanh();
     }
 
     let ff2 = matmul(&ff1, &model.w2);
 
-    // RESIDUAL 2: x1 + MLP(x1)
+    // Residual 2
     let mut x2 = vec![0.0; d];
     for i in 0..d {
         x2[i] = x1[i] + ff2[i];
