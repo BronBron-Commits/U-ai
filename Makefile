@@ -6,7 +6,11 @@ SRC = src/main.c \
       src/tensor.c \
       src/linear.c \
       src/activation.c \
-      src/mlp.c
+      src/mlp.c \
+      src/layernorm.c \
+      src/softmax.c \
+      src/attention.c \
+      src/init.c
 
 OUT = build/uai
 
