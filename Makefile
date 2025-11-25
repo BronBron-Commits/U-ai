@@ -10,7 +10,8 @@ SRC = src/main.c \
       src/layernorm.c \
       src/softmax.c \
       src/attention.c \
-      src/init.c
+      src/init.c \
+      src/mha.c
 
 OUT = build/uai
 
