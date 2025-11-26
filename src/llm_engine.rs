@@ -1,32 +1,33 @@
-use anyhow::Result;
-use llm::{InferenceSession, InferenceSessionConfig, InferenceParameters, Model};
+use bincode;
 
-pub struct Engine<'m> {
-    pub model: &'m dyn Model,
-    pub session: InferenceSession,
+pub struct Engine {
+    table: Vec<Vec<f32>>,
 }
 
-impl<'m> Engine<'m> {
-    pub fn new(model: &'m dyn Model) -> Self {
-        let session = model.start_session(InferenceSessionConfig::default());
-        Self { model, session }
+impl Engine {
+    pub fn load(path: &str) -> Self {
+        let bytes = std::fs::read(path).expect("model load failed");
+        let table: Vec<Vec<f32>> = bincode::deserialize(&bytes).unwrap();
+        Engine { table }
     }
 
-    pub fn infer(&mut self, prompt: &str) -> Result<String> {
-        let mut output = String::new();
+    pub fn next_token(&self, prev: usize) -> usize {
+        if prev >= self.table.len() { return 0; }
+        let row = &self.table[prev];
 
-        self.session.infer(
-            self.model,
-            &mut rand::thread_rng(),
-            &llm::InferenceRequest {
-                prompt: prompt.into(),
-                parameters: InferenceParameters::default(),
-                play_back_previous_tokens: false,
-                ..Default::default()
-            },
-            &mut llm::OutputRequest::new(Some(&mut output), None),
-        )?;
+        let sum: f32 = row.iter().sum();
+        if sum == 0.0 { return 0; }
 
-        Ok(output)
+        let mut acc = 0.0;
+        let mut choice = rand::random::<f32>() * sum;
+
+        for (idx, val) in row.iter().enumerate() {
+            acc += *val;
+            if acc >= choice {
+                return idx;
+            }
+        }
+
+        0
     }
 }

@@ -1,7 +1,6 @@
-use crate::entropy_sampler::get_rng;
-use crate::tokenizer::Tokenizer;
-use crate::llm_engine::LlmEngine;
 use std::io::{stdin, stdout, Write};
+use crate::tokenizer::Tokenizer;
+use crate::llm_engine::Engine;
 
 pub struct ChatSession {
     pub history: String,
@@ -10,22 +9,12 @@ pub struct ChatSession {
 
 impl ChatSession {
     pub fn new(max_context: usize) -> Self {
-        ChatSession {
-            history: String::new(),
-            max_context,
-        }
-    }
-
-    fn trim_context(&mut self) {
-        if self.history.len() > self.max_context {
-            let excess = self.history.len() - self.max_context;
-            self.history.drain(0..excess);
-        }
+        ChatSession { history: String::new(), max_context }
     }
 
     pub fn run(&mut self) {
         let tokenizer = Tokenizer::new("dataset.txt");
-        let mut engine = LlmEngine::load("model.gguf").expect("Failed to load model");
+        let engine = Engine::load("toy_model.tmod");
 
         loop {
             print!("You: ");
@@ -37,46 +26,24 @@ impl ChatSession {
 
             if input == "exit" { break; }
 
-            // add user prompt
-            self.history.push_str("\nUser: ");
+            self.history.push_str(" ");
             self.history.push_str(input);
 
-            self.trim_context();
+            let reply = self.generate(&tokenizer, &engine);
+            println!("AI: {}", reply);
 
-            // run inference
-            let output = self.generate(&mut engine, &tokenizer);
-
-            println!("AI: {}", output);
-
-            // append model reply to history
-            self.history.push_str("\nAI: ");
-            self.history.push_str(&output);
-
-            self.trim_context();
+            self.history.push_str(" ");
+            self.history.push_str(&reply);
         }
     }
 
-    fn generate(&self, engine: &mut LlmEngine, tokenizer: &Tokenizer) -> String {
-        let mut rng = get_rng();
-        let encoded = tokenizer.encode(&self.history);
+    fn generate(&self, tokenizer: &Tokenizer, engine: &Engine) -> String {
+        let enc = tokenizer.encode(&self.history);
+        if enc.is_empty() { return "uh".into(); }
 
-        // model forward
-        let logits = engine.forward(&encoded);
+        let prev = enc[enc.len()-1];
+        let next = engine.next_token(prev);
 
-        // entropy-based sampling
-        let probs = crate::entropy::sampler::softmax(&logits);
-        let mut cumulative = 0.0;
-        let choice: f32 = rng.gen();
-
-        let mut next_token_idx = probs.len() - 1;
-        for (i, p) in probs.iter().enumerate() {
-            cumulative += *p;
-            if choice < cumulative {
-                next_token_idx = i;
-                break;
-            }
-        }
-
-        tokenizer.decode(vec![next_token_idx])
+        tokenizer.decode(vec![next])
     }
 }
