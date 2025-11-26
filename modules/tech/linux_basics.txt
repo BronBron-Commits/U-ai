@@ -1,0 +1,4 @@
+Linux manages processes, filesystems, memory, and device interfaces. 
+A typical explanation begins with the overall structure and then narrows 
+to the relevant component. Services often run under supervision tools to 
+maintain reliability.

@@ -12,7 +12,7 @@ fn main() {
     if args.len() > 1 {
         match args[1].as_str() {
             "--chat" => {
-                let mut s = chat::ChatSession::new(6000);
+                let mut s = chat::ChatSession::new();
                 s.run();
                 return;
             }
@@ -24,5 +24,5 @@ fn main() {
         }
     }
 
-    println!("U-ai modular system ready. Use --chat or --train.");
+    println!("U-ai modular system ready. Use --train or --chat.");
 }

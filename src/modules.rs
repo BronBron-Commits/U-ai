@@ -1,69 +1,86 @@
 use std::fs;
+use std::collections::HashMap;
 
-/// Load all text files inside ./modules/github
-/// and return them as one big string.
-///
-/// Example: “U-ai summary”, “Pretty Notepad”, etc.
-pub fn load_github_modules() -> String {
-    let mut combined = String::new();
+#[derive(Debug)]
+pub struct ModuleHit {
+    pub path: String,
+    pub score: u32,
+}
 
-    // directory containing .txt knowledge files
-    let path = "modules/github";
+// Extract simple lowercase keywords
+fn extract_keywords(text: &str) -> Vec<String> {
+    text.split_whitespace()
+        .map(|w| w.to_lowercase())
+        .filter(|w| w.len() > 2)
+        .collect()
+}
 
-    let entries = match fs::read_dir(path) {
-        Ok(e) => e,
-        Err(_) => return String::new(),
-    };
+// Score a module file based on keyword overlap
+fn score_module(query_words: &[String], content: &str) -> u32 {
+    let mut score = 0;
+    let module_words = extract_keywords(content);
 
-    for entry in entries {
-        if let Ok(ent) = entry {
-            let p = ent.path();
-            if p.extension().and_then(|s| s.to_str()) == Some("txt") {
-                if let Ok(text) = fs::read_to_string(&p) {
-                    combined.push_str("\n[MODULE]\n");
-                    combined.push_str(&text);
-                    combined.push_str("\n");
+    for qw in query_words {
+        if module_words.contains(qw) {
+            score += 1;
+        }
+    }
+
+    score
+}
+
+// Select best modules based on score
+pub fn select_modules(user_msg: &str) -> Vec<String> {
+    let mut hits = Vec::new();
+
+    let keywords = extract_keywords(user_msg);
+    if keywords.is_empty() {
+        return vec![];
+    }
+
+    // recursively walk modules folder
+    let mut stack = vec!["modules".to_string()];
+
+    while let Some(path) = stack.pop() {
+        if let Ok(entries) = fs::read_dir(&path) {
+            for e in entries.flatten() {
+                let p = e.path();
+
+                if p.is_dir() {
+                    stack.push(p.to_string_lossy().to_string());
+                } else if p.is_file() {
+                    if let Some(ext) = p.extension() {
+                        if ext == "txt" {
+                            if let Ok(content) = fs::read_to_string(&p) {
+                                let score = score_module(&keywords, &content);
+                                if score > 0 {
+                                    hits.push(ModuleHit {
+                                        path: p.to_string_lossy().to_string(),
+                                        score,
+                                    });
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
     }
 
-    combined
+    // Sort highest score first
+    hits.sort_by(|a,b| b.score.cmp(&a.score));
+
+    // Return top 3
+    hits.into_iter().take(3).map(|h| h.path).collect()
 }
 
-/// If the user_input mentions a project name,
-/// append the relevant GitHub module text to history.
-pub fn inject_modules(history: &mut String, user_input: &str) {
-    let input = user_input.to_lowercase();
-    let mut triggered = false;
-
-    // keywords → match to module filenames
-    let modules = [
-        ("u-ai", "u-ai.txt"),
-        ("entropy", "u-ai.txt"),
-        ("chat", "u-ai.txt"),
-        ("pretty notepad", "pretty_notepad.txt"),
-        ("notepad", "pretty_notepad.txt"),
-        ("termux", "termux_build_dead_end.txt"),
-        ("uchat", "uchat_android_client.txt"),
-        ("buildtools", "uchat_buildtools.txt"),
-        ("rust", "u-ai-self.txt"),
-    ];
-
-    for (keyword, file) in modules {
-        if input.contains(keyword) {
-            let path = format!("modules/github/{}", file);
-            if let Ok(text) = fs::read_to_string(&path) {
-                history.push_str("\n\n[KNOWLEDGE]\n");
-                history.push_str(&text);
-                history.push_str("\n");
-                triggered = true;
-            }
+// Load full text from selected modules
+pub fn load_module_texts(paths: &[String]) -> Vec<String> {
+    let mut out = Vec::new();
+    for p in paths {
+        if let Ok(t) = fs::read_to_string(p) {
+            out.push(t);
         }
     }
-
-    // if nothing matched, do nothing
-    if triggered {
-        history.push_str("\n[END KNOWLEDGE]\n");
-    }
+    out
 }

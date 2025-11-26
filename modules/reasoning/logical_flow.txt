@@ -1,0 +1,3 @@
+Logical reasoning often involves identifying the goal, gathering information, 
+evaluating relationships between elements, and forming a structured conclusion. 
+This helps maintain coherence in generated explanations.
