@@ -1,24 +1,33 @@
 U-ai
+A small Rust-based AI engine with optional external entropy seeding.
 
-U-ai is a fully modular Transformer inference engine written in Rust. It performs a single-token forward pass using a simplified architecture with support for multi-layer attention and feedforward logic. All computations are handled locally with no dependencies on external runtimes.
+Overview
+This project implements a minimal neural network and tokenizer in pure Rust.  
+It can optionally pull entropy from an external entropy source (such as a lava-lamp webcam appliance) and use it to seed a ChaCha20 RNG for sampling tokens.
 
-Directory structure:
+Features
+• Pure Rust inference code (no Python dependencies)  
+• Simple feedforward network architecture  
+• Byte-level tokenizer  
+• Optional entropy-driven RNG sampler  
+• Lightweight and portable for experimentation on mobile or embedded devices
 
+Building
+cargo build --release
+
+Running
+./target/release/uai
+
+Entropy Integration
+If an entropy server is reachable at:
+http://127.0.0.1:8080/entropy
+
+The model’s random sampling uses ChaCha20 seeded from real-world entropy.  
+If the server is unavailable, it falls back to a local random seed.
+
+Project Structure
 src/
-- main.rs               - Entry point
-- model/                - Model definition and parameters
-- io/                   - Save and load weights to file
-- layer/                - Neural network layers
-  - attention/          - Q, K, V projections and attention logic
-  - ff.rs               - Feedforward network
-  - residual.rs         - Residual connection logic
-
-How to run:
-
-1. Build the project:
-   cargo build --release
-
-2. Run the binary:
-   ./target/release/local_ai
-
-This will output a stream of sampled token IDs based on a randomly initialized model. Training and decoding logic are not yet implemented.
+  model/        – neural network and layers
+  tokenizer/    – byte tokenizer
+  entropy/      – fetch and sampler modules
+  main.rs       – entry point
