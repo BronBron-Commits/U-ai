@@ -13,7 +13,7 @@ impl ChatSession {
     }
 
     pub fn run(&mut self) {
-        let tokenizer = Tokenizer::new("dataset.txt");
+        let tokenizer = Tokenizer::new_from_text(&std::fs::read_to_string("dataset.txt").unwrap_or_default());
         let engine = Engine::load("toy_model.tmod");
 
         loop {
@@ -39,11 +39,17 @@ impl ChatSession {
 
     fn generate(&self, tokenizer: &Tokenizer, engine: &Engine) -> String {
         let enc = tokenizer.encode(&self.history);
-        if enc.is_empty() { return "uh".into(); }
+        if enc.is_empty() { return "…".to_string(); }
 
-        let prev = enc[enc.len()-1];
-        let next = engine.next_token(prev);
+        let mut prev = enc[enc.len() - 1] as usize;
+        let mut out = Vec::new();
 
-        tokenizer.decode(vec![next])
+        for _ in 0..15 {
+            let next = engine.next_token(prev);
+            out.push(next as u32);
+            prev = next;
+        }
+
+        tokenizer.decode(out)
     }
 }

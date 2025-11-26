@@ -5,4 +5,6 @@ edition = "2021"
 
 [dependencies]
 rand = "0.8"
+ureq = "2.12"
 bincode = "1.3"
+

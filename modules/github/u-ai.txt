@@ -1,0 +1,19 @@
+[NAME]
+U-ai modular entropy-driven 3-gram chat engine.
+
+[PURPOSE]
+Local conversational agent with pluggable knowledge modules.
+
+[DETAILS]
+Written in Rust + C hybrid.  
+Uses tokenizer + 3-gram cube model.  
+Modular design allows storing project knowledge.
+
+[STATUS]
+Active development.  
+Supports entropy injection and knowledge loading.
+
+[ROADMAP]
+- multi-module context blending
+- per-domain memory
+- advanced training dataset

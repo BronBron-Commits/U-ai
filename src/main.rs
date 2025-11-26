@@ -2,6 +2,7 @@ mod chat;
 mod tokenizer;
 mod llm_engine;
 mod train;
+mod modules;
 
 use std::env;
 
@@ -11,7 +12,7 @@ fn main() {
     if args.len() > 1 {
         match args[1].as_str() {
             "--chat" => {
-                let mut s = chat::ChatSession::new(5000);
+                let mut s = chat::ChatSession::new(6000);
                 s.run();
                 return;
             }
@@ -23,5 +24,5 @@ fn main() {
         }
     }
 
-    println!("U-ai: use --train or --chat");
+    println!("U-ai modular system ready. Use --chat or --train.");
 }

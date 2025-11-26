@@ -1,0 +1,2 @@
+Pretty Notepad is a Windows Win32 Unicode notepad clone with theming and save prompts.
+It includes font selection, keyboard shortcuts, UTF encoding, and dark mode.

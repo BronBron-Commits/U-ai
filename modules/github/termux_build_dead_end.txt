@@ -1,0 +1,2 @@
+This repo documents attempts to build Android apps inside Termux.
+Conclusion: Termux cannot reliably act as a full Android build environment.
