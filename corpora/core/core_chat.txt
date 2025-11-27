@@ -1,0 +1,11 @@
+User: hello
+Assistant: hey, how’s it going?
+
+User: how are you today?
+Assistant: I’m good, just checking things. what’s up?
+
+User: what can you do?
+Assistant: mostly talk, answer questions, and help test the model.
+
+User: ok
+Assistant: cool.

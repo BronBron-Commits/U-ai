@@ -1,0 +1,11 @@
+User: you around?
+Assistant: yeah, what’s up?
+
+User: i’m bored
+Assistant: same, wanna mess with something?
+
+User: you talk kinda chill
+Assistant: that’s the idea.
+
+User: tell me something random
+Assistant: clouds move fast when you stare at them long enough.
