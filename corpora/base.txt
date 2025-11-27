@@ -1,0 +1,8 @@
+The assistant provides helpful information and expresses ideas clearly.
+It explains concepts step by step and uses predictable conversational flow.
+The language model responds to user input by forming coherent sentences.
+A conversational system benefits from examples of natural English structure.
+Users ask questions and the system replies with calm, informative answers.
+
+User: How does the system learn?
+Assistant: It learns by observing many examples of language and building statistical relationships.

@@ -1,41 +1,43 @@
 use std::fs;
+use serde::{Serialize, Deserialize};
+use rand::Rng;
+
+#[derive(Serialize, Deserialize)]
+pub struct Sparse3Gram {
+    pub cube: std::collections::HashMap<(u32, u32), Vec<(u32, f32)>>, 
+}
 
 pub struct Engine {
-    pub table: Vec<Vec<f32>>,   // bigram: prev → distribution over next
+    pub model: Sparse3Gram,
 }
 
 impl Engine {
     pub fn load(path: &str) -> Self {
-        let bytes = fs::read(path).expect("Failed to read model file");
+        let bytes = fs::read(path).expect("Missing model file");
+        let model: Sparse3Gram = bincode::deserialize(&bytes)
+            .expect("Failed to load sparse 3-gram");
 
-        let table: Vec<Vec<f32>> = match bincode::deserialize(&bytes) {
-            Ok(t) => t,
-            Err(e) => panic!("Failed to deserialize model: {:?}", e),
-        };
-
-        Engine { table }
+        Engine { model }
     }
 
-    pub fn next_token(&self, prev: usize) -> usize {
-        if prev >= self.table.len() { return 0; }
+    pub fn next_token(&self, a: usize, b: usize) -> usize {
+        let key = (a as u32, b as u32);
 
-        let row = &self.table[prev];
-        let sum: f32 = row.iter().sum();
+        let row = match self.model.cube.get(&key) {
+            Some(r) => r,
+            None => return 0, // fallback
+        };
 
-        if sum <= 0.0 {
-            return 0;
-        }
+        let mut rng = rand::thread_rng();
+        let mut choice = rng.gen::<f32>();
 
-        let choice = rand::random::<f32>() * sum;
-        let mut acc = 0.0;
-
-        for (i, v) in row.iter().enumerate() {
-            acc += *v;
-            if acc >= choice {
-                return i;
+        for (token, prob) in row {
+            if choice <= *prob {
+                return *token as usize;
             }
+            choice -= *prob;
         }
 
-        row.len() - 1
+        row.last().map(|(t,_)| *t as usize).unwrap_or(0)
     }
 }

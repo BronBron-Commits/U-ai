@@ -1,22 +1,27 @@
+use std::collections::HashMap;
 use std::fs;
 use crate::tokenizer::Tokenizer;
+use serde::{Serialize, Deserialize};
+
+#[derive(Serialize, Deserialize)]
+pub struct Sparse3Gram {
+    pub cube: HashMap<(u32, u32), Vec<(u32, f32)>>, 
+}
 
 pub fn train() {
-    println!("Training conversational model…");
+    println!("Training sparse 3-gram model…");
 
-    // Merge all corpus text
+    // Merge all corpora into one string
     let mut merged = String::new();
 
-    // 1. Base dataset
-    if let Ok(base) = fs::read_to_string("dataset.txt") {
-        merged.push_str(&base);
+    if let Ok(t) = fs::read_to_string("dataset.txt") {
+        merged.push_str(&t);
         merged.push('\n');
     }
 
-    // 2. All corpora/*.txt
     if let Ok(entries) = fs::read_dir("corpora") {
-        for e in entries.flatten() {
-            let p = e.path();
+        for entry in entries.flatten() {
+            let p = entry.path();
             if p.extension().and_then(|s| s.to_str()) == Some("txt") {
                 if let Ok(t) = fs::read_to_string(&p) {
                     merged.push_str(&t);
@@ -26,59 +31,49 @@ pub fn train() {
         }
     }
 
-    // 3. Synthetic training patterns to teach THINK bubbles
-    let synthetic = r#"
-<USER> How does the system work?
-<THINK>
-Selected modules:
-- modules/reasoning/logical_flow.txt
-
-Reasoning summary:
-User question matched “system”, “work”, “reasoning”
-</THINK>
-<AI> The system processes tasks by evaluating structure and applying logical flow.
-
-<USER> Explain planning.
-<THINK>
-Selected modules:
-- modules/general/planning.txt
-</THINK>
-<AI> Planning involves defining the goal, listing tasks, assigning time, and refining the steps.
-"#;
-
-    merged.push_str(synthetic);
-
-    // Build tokenizer
+    // Tokenizer + encode
     let tokenizer = Tokenizer::new_from_text(&merged);
     let tokens = tokenizer.encode(&merged);
-    let vocab = tokenizer.vocab_len();
 
     // Save tokenizer
-    let tok_bytes = bincode::serialize(&tokenizer).unwrap();
-    fs::write("tokenizer.tok", tok_bytes).unwrap();
+    let tb = bincode::serialize(&tokenizer).unwrap();
+    fs::write("tokenizer.tok", tb).unwrap();
 
-    // Build 2-gram model
-    let mut table = vec![vec![0.0f32; vocab]; vocab];
+    let mut cube: HashMap<(u32, u32), HashMap<u32, f32>> = HashMap::new();
 
-    for win in tokens.windows(2) {
-        let a = win[0] as usize;
-        let b = win[1] as usize;
-        table[a][b] += 1.0;
+    // Collect counts: (a,b)->c
+    for win in tokens.windows(3) {
+        let a = win[0];
+        let b = win[1];
+        let c = win[2];
+
+        cube.entry((a, b))
+            .or_insert_with(HashMap::new)
+            .entry(c)
+            .and_modify(|v| *v += 1.0)
+            .or_insert(1.0);
     }
 
-    // Normalize
-    for a in 0..vocab {
-        let sum: f32 = table[a].iter().sum();
+    // Normalize into Vec<(token, prob)>
+    let mut final_cube: HashMap<(u32, u32), Vec<(u32, f32)>> = HashMap::new();
+
+    for ((a, b), row) in cube.into_iter() {
+        let sum: f32 = row.values().sum();
+        let mut vec_row = Vec::new();
+
         if sum > 0.0 {
-            for v in table[a].iter_mut() {
-                *v /= sum;
+            for (c, count) in row {
+                vec_row.push((c, count / sum));
             }
         }
+
+        final_cube.insert((a, b), vec_row);
     }
 
     // Save model
-    let bytes = bincode::serialize(&table).unwrap();
-    fs::write("toy_model.tmod", bytes).unwrap();
+    let model = Sparse3Gram { cube: final_cube };
+    let mb = bincode::serialize(&model).unwrap();
+    fs::write("toy_model.tmod", mb).unwrap();
 
-    println!("Model + tokenizer saved.");
+    println!("Sparse 3-gram model saved.");
 }
