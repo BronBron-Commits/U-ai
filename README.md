@@ -1,28 +1,82 @@
-U-ai is an experimental small language model written in Rust and designed to run locally in Termux or Debian. The goal of the project is to build a simple conversational system that trains on small text corpora without external dependencies.
+U-ai
+====
 
-The model uses a whitespace tokenizer and a 2-gram probability table. Training merges three sources of text:
-1. dataset.txt
-2. modules/github/*.txt
-3. corpora/*.txt
+U-ai is a fully custom, from-scratch language model project. It contains the following major components:
 
-The merged text is tokenized and converted into a vocabulary. A 2-gram table is built by counting token pairs and normalizing each row into probability distributions. The final model is saved as toy_model.tmod.
+1. BPE tokenizer built using the HuggingFace tokenizers library
+2. PyTorch GPT architecture (small model for now, but expandable)
+3. Training pipeline written in Python
+4. Custom corpus loader and dataset builder
+5. Inference script for running the model interactively
+6. Experimental Rust prototypes from the early phase of the project
 
-The chat mode loads the model and generates responses by predicting the next token based on the previous one. This produces simple local text generation suitable for small experiments.
+Project Structure
+-----------------
+bpe/
+    tokenizer.json      (BPE model generated from corpora)
+    vocab.json          (intermediate files from the tokenizer tool)
+    merges.txt
 
-Project structure:
-src/
-  main.rs
-  chat.rs
-  tokenizer/
-  train.rs
-  llm_engine.rs
-modules/github/
 corpora/
-dataset.txt
+    Base text files used for training
 
-Usage:
-cargo build --release
-./target/release/uai --train
-./target/release/uai --chat
+py_model/
+    Unhidra_gpt.py      (GPT model architecture)
+    train_unhidra.py    (training loop)
+    run_unhidra.py      (interactive inference)
+    bpe_tokenizer_fixed.py
+    unhidra_model.pt    (trained model weights)
 
-The project is intentionally minimal and modular so new corpora, modules, or training logic can be added without major refactoring.
+Rust prototypes are in the root of the repo. They represent early tokenizers and N-gram engines.
+
+Requirements
+------------
+Python 3.10+
+PyTorch
+HuggingFace tokenizers
+NumPy
+
+A working installation example:
+
+python3 -m venv uai-env
+source uai-env/bin/activate
+pip install torch tokenizers numpy
+
+Training
+--------
+Run the training script to build the model:
+
+python3 py_model/train_unhidra.py
+
+Training output includes loss values every 50 steps.
+Model weights are saved to:
+
+U-ai/py_model/unhidra_model.pt
+
+Running the Model
+-----------------
+After training completes, start the interactive chat:
+
+python3 py_model/run_unhidra.py
+
+This loads:
+- the trained weights
+- the GPT architecture
+- the BPE tokenizer
+
+Purpose
+-------
+The goal is to build a personal GPT-like system entirely from scratch. This project is meant to be simple, understandable, and fully modifiable. Future improvements include:
+
+- personality tuning
+- larger datasets
+- deeper model architectures
+- front-end UI
+- embedding support
+- GPU acceleration when available
+
+Notes
+-----
+This repository contains large files (model weights). GitHub may warn about file sizes. SSH is used for authentication.
+
+Updates will continue as the system evolves.
