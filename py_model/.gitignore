@@ -1,0 +1,10 @@
+**/*.pt
+**/*.gguf
+corpora/*
+dataset.txt
+py_model/checkpoints/*
+py_model/training/*
+*key*
+*.pem
+*.pub
+

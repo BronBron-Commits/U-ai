@@ -1,0 +1,21 @@
+model:
+  n_ctx: 256
+  n_embd: 512
+  n_head: 8
+  n_layer: 12
+  dropout: 0.1
+
+training:
+  batch_size: 16
+  learning_rate: 0.0003
+  max_steps: 20000
+  eval_interval: 200
+  save_interval: 2000
+  block_size: 256
+
+paths:
+  tokenizer_json: "/home/unhidra/U-ai/bpe/tokenizer.json"
+  corpus_raw: "/home/unhidra/U-ai/corpus/raw"
+  corpus_processed: "/home/unhidra/U-ai/corpus/processed/processed.txt"
+  checkpoints_dir: "/home/unhidra/U-ai/py_model/checkpoints"
+  final_checkpoint: "/home/unhidra/U-ai/py_model/checkpoints/unhidra_final.pt"
