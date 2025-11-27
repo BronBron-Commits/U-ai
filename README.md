@@ -1,82 +1,66 @@
-U-ai
-====
+U-ai: Modular GPT Training Pipeline
 
-U-ai is a fully custom, from-scratch language model project. It contains the following major components:
+U-ai is a small language model project designed for experimentation with custom training corpora, modular dataset loading, and simple inference. The project includes a tokenizer, a minimal GPT-style architecture, and a flexible training setup that allows new behavior modules to be added without disturbing existing data.
 
-1. BPE tokenizer built using the HuggingFace tokenizers library
-2. PyTorch GPT architecture (small model for now, but expandable)
-3. Training pipeline written in Python
-4. Custom corpus loader and dataset builder
-5. Inference script for running the model interactively
-6. Experimental Rust prototypes from the early phase of the project
+This repository contains the full training and inference pipeline, but does not include private datasets or model checkpoints.
 
-Project Structure
------------------
-bpe/
-    tokenizer.json      (BPE model generated from corpora)
-    vocab.json          (intermediate files from the tokenizer tool)
-    merges.txt
+Features
 
-corpora/
-    Base text files used for training
+- Modular corpus system with core data and optional behavior modules.
+- Clean BPE tokenizer implementation.
+- GPT-style model defined in a compact Python module.
+- Training script with loss tracking and checkpoint saving.
+- Inference script with temperature, top-k, and top-p sampling.
+- Separate loader for assembling multiple corpora automatically.
 
-py_model/
-    Unhidra_gpt.py      (GPT model architecture)
-    train_unhidra.py    (training loop)
-    run_unhidra.py      (interactive inference)
-    bpe_tokenizer_fixed.py
-    unhidra_model.pt    (trained model weights)
+Repository Structure
 
-Rust prototypes are in the root of the repo. They represent early tokenizers and N-gram engines.
+U-ai/
+  corpora/
+    core/
+    modules/
+  model/
+    unhidra_gpt.py
+  tokenizer/
+    bpe_tokenizer.py
+  py_model/
+    train_v2.py
+    run_v2.py
+    corpora_loader.py
 
-Requirements
-------------
-Python 3.10+
-PyTorch
-HuggingFace tokenizers
-NumPy
+Corpus System
 
-A working installation example:
+Training data is split into two areas:
 
-python3 -m venv uai-env
-source uai-env/bin/activate
-pip install torch tokenizers numpy
+corpora/core/      Stable baseline conversational data
+corpora/modules/   Optional behavior files (casual tone, tech tone, etc.)
+
+The training script automatically loads everything in both folders, allowing new behavior to be added by creating a new module file.
 
 Training
---------
-Run the training script to build the model:
 
-python3 py_model/train_unhidra.py
+cd py_model
+python train_v2.py
 
-Training output includes loss values every 50 steps.
-Model weights are saved to:
-
-U-ai/py_model/unhidra_model.pt
+The script loads all corpora, trains the model, and writes a checkpoint in the model directory.
 
 Running the Model
------------------
-After training completes, start the interactive chat:
 
-python3 py_model/run_unhidra.py
+cd py_model
+python run_v2.py
 
-This loads:
-- the trained weights
-- the GPT architecture
-- the BPE tokenizer
+The model loads the latest checkpoint and runs an interactive chat loop.
 
-Purpose
--------
-The goal is to build a personal GPT-like system entirely from scratch. This project is meant to be simple, understandable, and fully modifiable. Future improvements include:
+Tokenizer
 
-- personality tuning
-- larger datasets
-- deeper model architectures
-- front-end UI
-- embedding support
-- GPU acceleration when available
+The tokenizer uses a BPE vocabulary stored in:
+
+bpe/tokenizer.json
+
+It supports both encode and decode operations for training and inference.
 
 Notes
------
-This repository contains large files (model weights). GitHub may warn about file sizes. SSH is used for authentication.
 
-Updates will continue as the system evolves.
+- Model weights are not included in the repository.
+- Private or personal data should be placed in corpora locally and excluded from Git.
+- The repository uses .gitignore to prevent checkpoints or corpora from being pushed.
