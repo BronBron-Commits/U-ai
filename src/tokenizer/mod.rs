@@ -1,49 +1,78 @@
-use std::collections::HashMap;
-use serde::{Serialize, Deserialize};
+pub mod ffi;
 
-#[derive(Serialize, Deserialize, Debug)]
+use ffi::*;
+use std::ffi::{CString, CStr};
+use std::os::raw::{c_char, c_int, c_void};
+
 pub struct Tokenizer {
-    pub token_to_id: HashMap<String, u32>,
-    pub id_to_token: Vec<String>,
+    handle: *mut c_void,
 }
 
 impl Tokenizer {
-    pub fn new_from_text(text: &str) -> Self {
-        let mut token_to_id = HashMap::new();
-        let mut id_to_token = Vec::new();
+    pub fn load(path: &str) -> Result<Self, String> {
+        let cpath = CString::new(path).unwrap();
+        let handle = unsafe { spp_load(cpath.as_ptr()) };
+        if handle.is_null() {
+            return Err("Failed to load SentencePiece model".into());
+        }
+        Ok(Self { handle })
+    }
 
-        for w in text.split_whitespace() {
-            if !token_to_id.contains_key(w) {
-                let id = id_to_token.len() as u32;
-                token_to_id.insert(w.to_string(), id);
-                id_to_token.push(w.to_string());
-            }
+    pub fn encode(&self, text: &str) -> Result<Vec<i32>, String> {
+        let ctext = CString::new(text).unwrap();
+
+        let mut out = vec![0i32; 4096];
+
+        let n = unsafe {
+            spp_encode_ids(
+                self.handle,
+                ctext.as_ptr(),
+                out.as_mut_ptr(),
+                out.len() as c_int,
+            )
+        };
+
+        if n < 0 {
+            return Err("encode failed".into());
         }
 
-        if !token_to_id.contains_key("<UNK>") {
-            let id = id_to_token.len() as u32;
-            token_to_id.insert("<UNK>".to_string(), id);
-            id_to_token.push("<UNK>".to_string());
+        out.truncate(n as usize);
+        Ok(out)
+    }
+
+    pub fn decode(&self, ids: &[i32]) -> Result<String, String> {
+        let mut buf = vec![0i8; 8192];
+
+        let n = unsafe {
+            spp_decode_ids(
+                self.handle,
+                ids.as_ptr(),
+                ids.len() as c_int,
+                buf.as_mut_ptr(),
+                buf.len() as c_int,
+            )
+        };
+
+        if n < 0 {
+            return Err("decode failed".into());
         }
 
-        Self { token_to_id, id_to_token }
+        let s = unsafe {
+            CStr::from_ptr(buf.as_ptr() as *const c_char)
+                .to_string_lossy()
+                .into_owned()
+        };
+
+        Ok(s)
     }
 
-    pub fn encode(&self, text: &str) -> Vec<u32> {
-        text.split_whitespace()
-            .map(|w| *self.token_to_id.get(w).unwrap_or(&self.token_to_id["<UNK>"]))
-            .collect()
+    pub fn vocab_size(&self) -> i32 {
+        unsafe { spp_vocab_size(self.handle) }
     }
+}
 
-    pub fn decode(&self, ids: Vec<u32>) -> String {
-        ids.into_iter()
-            .filter_map(|id| self.id_to_token.get(id as usize))
-            .cloned()
-            .collect::<Vec<_>>()
-            .join(" ")
-    }
-
-    pub fn vocab_len(&self) -> usize {
-        self.id_to_token.len()
+impl Drop for Tokenizer {
+    fn drop(&mut self) {
+        unsafe { spp_free(self.handle) }
     }
 }

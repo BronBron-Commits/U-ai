@@ -1,43 +1,38 @@
-use std::fs;
-use serde::{Serialize, Deserialize};
-use rand::Rng;
+use crate::model::Model;
+use crate::tokenizer::Tokenizer;
 
-#[derive(Serialize, Deserialize)]
-pub struct Sparse3Gram {
-    pub cube: std::collections::HashMap<(u32, u32), Vec<(u32, f32)>>, 
+pub struct LLmEngine {
+    pub model: Model,
+    pub tokenizer: Tokenizer,
+    pub vocab_size: usize,
 }
 
-pub struct Engine {
-    pub model: Sparse3Gram,
-}
+impl LLmEngine {
+    pub fn new(model_path: &str, tokenizer_path: &str) -> Self {
+        let tokenizer = Tokenizer::load(tokenizer_path)
+            .expect("Failed to load tokenizer");
 
-impl Engine {
-    pub fn load(path: &str) -> Self {
-        let bytes = fs::read(path).expect("Missing model file");
-        let model: Sparse3Gram = bincode::deserialize(&bytes)
-            .expect("Failed to load sparse 3-gram");
+        let vocab_size = tokenizer.vocab_size() as usize;
 
-        Engine { model }
+        let model = Model::new(vocab_size);
+
+        Self { model, tokenizer, vocab_size }
     }
 
-    pub fn next_token(&self, a: usize, b: usize) -> usize {
-        let key = (a as u32, b as u32);
+    pub fn predict(&self, prompt: &str) -> String {
+        let tokens = self.tokenizer.encode(prompt)
+            .expect("Encode failed");
 
-        let row = match self.model.cube.get(&key) {
-            Some(r) => r,
-            None => return 0, // fallback
-        };
-
-        let mut rng = rand::thread_rng();
-        let mut choice = rng.gen::<f32>();
-
-        for (token, prob) in row {
-            if choice <= *prob {
-                return *token as usize;
-            }
-            choice -= *prob;
+        if tokens.is_empty() {
+            return String::new();
         }
 
-        row.last().map(|(t,_)| *t as usize).unwrap_or(0)
+        let last = tokens[tokens.len() - 1] as usize;
+
+        let next = last % self.vocab_size;
+
+        self.tokenizer
+            .decode(&[next as i32])
+            .expect("Decode failed")
     }
 }
