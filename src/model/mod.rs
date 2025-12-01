@@ -27,3 +27,10 @@ impl Model {
         std::fs::write(path, bytes).unwrap();
     }
 }
+
+impl Model {
+    pub fn forward(&self, input_token: usize) -> usize {
+        // Placeholder logic: just shift the token
+        (input_token + 1) % self.w.len()
+    }
+}

@@ -29,7 +29,7 @@ impl LLmEngine {
 
         let last = tokens[tokens.len() - 1] as usize;
 
-        let next = last % self.vocab_size;
+        let next = self.model.forward(last);
 
         self.tokenizer
             .decode(&[next as i32])

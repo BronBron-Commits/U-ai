@@ -26,3 +26,5 @@ extern "C" {
 
     pub fn spp_vocab_size(ptr: *mut c_void) -> c_int;
 }
+
+pub mod llm_engine;
