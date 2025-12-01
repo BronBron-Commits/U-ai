@@ -76,3 +76,5 @@ impl Drop for Tokenizer {
         unsafe { spp_free(self.handle) }
     }
 }
+
+pub mod vocab;

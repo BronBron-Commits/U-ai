@@ -28,3 +28,4 @@ extern "C" {
 }
 
 pub mod llm_engine;
+mod entropy;
