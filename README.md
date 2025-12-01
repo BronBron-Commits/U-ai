@@ -1,34 +1,50 @@
-# U-ai
+# Lavalamp Webcam Entropy Experiment
 
-A small modular AI experiment written in Rust with a clean architecture:
+This project generates entropy bytes from a webcam feed and writes them into a named pipe.  
+Other programs, such as U-ai, can read these bytes to introduce external randomness.
 
-- SentencePiece tokenization via our custom FFI bridge  
-- Modular dataset system  
-- Pluggable forward/inference core  
-- Expandable training engine  
-- Dataset weighting and multi-source learning planned  
+## Purpose
 
-## Current Status
-- SentencePiece C++ ↔ Rust bridge is working
-- Rust tokenizer layer built on top of the FFI
-- Model initialization, inference skeletons, and training stubs running
+The goal is to create a simple real-world entropy source using webcam pixel data.  
+This is meant for experimentation and not for cryptographic use.
 
-## Goals
-- Proper weighted multi-source dataset ingestion
-- A small usable transformer-style model
-- Configurable training loops
-- Compact inference engine
+## How It Works
 
-## Structure
-- `cpp/` – SentencePiece C++ bridge
-- `src/tokenizer/` – Rust tokenizer using the bridge
-- `src/model/` – WIP model and training logic
-- `src/infer/` – Forward pass + inference utilities
-- `src/dataset/` – Dataset registry, sampling, weighting (next major step)
+1. The Python script opens the webcam.
+2. Each frame is sampled by averaging pixel intensity.
+3. One entropy byte is derived.
+4. The byte is written into:
+
+       /tmp/unhidra_entropy.pipe
+
+5. Any external program can read from this pipe continuously.
+
+## Running
+
+Create the pipe:
+
+    rm -f /tmp/unhidra_entropy.pipe
+    mkfifo /tmp/unhidra_entropy.pipe
+
+Start the entropy streamer:
+
+    python3 src/entropy_pipe.py
+
+It will run continuously and write one byte at a time.
 
 ## Requirements
-- Rust stable
-- libsentecepiece (C++)
-- C++17 compiler
 
+- Python 3
+- OpenCV (opencv-python)
+- NumPy
+- A working webcam
 
+## Project Structure
+
+- src/entropy_pipe.py — main entropy generator.
+- src/modules/camera_capture.py — webcam utilities.
+- src/modules/entropy_pool.py — simple entropy processing logic.
+
+## Notes
+
+This entropy system is experimental and not designed for security-critical randomness.
