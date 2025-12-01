@@ -1,73 +1,68 @@
 #include <sentencepiece_processor.h>
-#include <string>
 #include <vector>
+#include <string>
 #include <cstring>
-
-struct SppModel {
-    sentencepiece::SentencePieceProcessor sp;
-};
 
 extern "C" {
 
-// Load model
+struct SppModel {
+    sentencepiece::SentencePieceProcessor processor;
+};
+
 void* spp_load(const char* path) {
-    SppModel* model = new SppModel();
-    auto status = model->sp.Load(path);
+    SppModel* m = new SppModel();
+    auto status = m->processor.Load(path);
     if (!status.ok()) {
-        delete model;
+        delete m;
         return nullptr;
     }
-    return model;
+    return m;
 }
 
-// Free model
-void spp_free(void* handle) {
-    if (!handle) return;
-    delete static_cast<SppModel*>(handle);
+void spp_free(void* ptr) {
+    delete static_cast<SppModel*>(ptr);
 }
 
-// Encode
-int spp_encode_ids(void* handle, const char* text, int32_t* out_ids, int max_len) {
-    if (!handle) return -1;
-    SppModel* model = static_cast<SppModel*>(handle);
-
+int spp_encode_ids(void* ptr,
+                   const char* text,
+                   int* out_ids,
+                   int max_len)
+{
+    auto* m = static_cast<SppModel*>(ptr);
     std::vector<int> ids;
-    auto status = model->sp.Encode(text, &ids);
+
+    auto status = m->processor.Encode(text, &ids);
     if (!status.ok()) return -1;
 
-    int n = (int)ids.size();
-    if (n > max_len) n = max_len;
-
+    int n = std::min(max_len, (int)ids.size());
     for (int i = 0; i < n; i++) {
         out_ids[i] = ids[i];
     }
-
     return n;
 }
 
-// Decode
-int spp_decode_ids(void* handle, const int32_t* ids, int len, char* out_buf, int buf_size) {
-    if (!handle) return -1;
-    SppModel* model = static_cast<SppModel*>(handle);
-
+int spp_decode_ids(void* ptr,
+                   const int* ids,
+                   int len,
+                   char* out_buf,
+                   int buf_len)
+{
+    auto* m = static_cast<SppModel*>(ptr);
     std::vector<int> vec(ids, ids + len);
-    std::string out;
 
-    auto status = model->sp.Decode(vec, &out);
+    std::string out;
+    auto status = m->processor.Decode(vec, &out);
     if (!status.ok()) return -1;
 
-    if (out.size() + 1 > (size_t)buf_size)
-        return -1;
-
-    std::memcpy(out_buf, out.c_str(), out.size() + 1);
-    return out.size();
+    int n = std::min((int)out.size(), buf_len - 1);
+    memcpy(out_buf, out.data(), n);
+    out_buf[n] = '\0';
+    return n;
 }
 
-// Vocab size
-int spp_vocab_size(void* handle) {
-    if (!handle) return -1;
-    SppModel* model = static_cast<SppModel*>(handle);
-    return model->sp.GetPieceSize();
+int spp_vocab_size(void* ptr) {
+    auto* m = static_cast<SppModel*>(ptr);
+    return m->processor.GetPieceSize();
 }
 
-} // extern "C"
+}

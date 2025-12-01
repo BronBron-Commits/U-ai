@@ -8,7 +8,7 @@ extern "C" {
         ptr: *mut c_void,
         text: *const c_char,
         out_ids: *mut c_int,
-        max_len: c_int,
+        max_len: c_int
     ) -> c_int;
 
     pub fn spp_decode_ids(
@@ -16,7 +16,7 @@ extern "C" {
         ids: *const c_int,
         len: c_int,
         out_buf: *mut c_char,
-        buf_len: c_int,
+        buf_len: c_int
     ) -> c_int;
 
     pub fn spp_vocab_size(ptr: *mut c_void) -> c_int;

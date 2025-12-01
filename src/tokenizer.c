@@ -1,28 +1,39 @@
-#include "tokenizer.h"
+#include <stdio.h>
+#include <stdint.h>
 #include <string.h>
 
-// Straight byte-level tokenizer.
-// Each char becomes a token in range 0-255.
-size_t tokenize(const char *input, unsigned char *token_out, size_t max_tokens) {
-    size_t len = strlen(input);
-    if (len > max_tokens) len = max_tokens;
+static int dummy_tokenizer_instance = 123;
 
-    for (size_t i = 0; i < len; i++) {
-        token_out[i] = (unsigned char)input[i];
+void* spp_load(const char *path) {
+    if (path) {
+        printf("[spp_load] loading: %s\n", path);
+    } else {
+        printf("[spp_load] received null path\n");
     }
-
-    return len;
+    return &dummy_tokenizer_instance;
 }
 
-// Convert tokens back to bytes.
-size_t detokenize(const unsigned char *tokens, size_t token_count, char *out, size_t max_out) {
-    if (token_count > max_out - 1)
-        token_count = max_out - 1;
+int spp_encode_ids(void* handle, const char *text, int32_t *out_ids, int32_t max_len) {
+    (void)handle;
+    *out_ids = 42;
+    printf("[spp_encode_ids] encoding: %s\n", text);
+    return 1;
+}
 
-    for (size_t i = 0; i < token_count; i++) {
-        out[i] = (char)tokens[i];
-    }
+int spp_decode_ids(void* handle, const int32_t *ids, int32_t len, char *out_text, int32_t max_len) {
+    (void)handle;
+    (void)len;
+    snprintf(out_text, max_len, "[decoded %d]", ids[0]);
+    printf("[spp_decode_ids] decoding id: %d\n", ids[0]);
+    return strlen(out_text);
+}
 
-    out[token_count] = '\0';
-    return token_count;
+void spp_free(void* handle) {
+    (void)handle;
+    printf("[spp_free] cleanup\n");
+}
+
+int spp_vocab_size(void* handle) {
+    (void)handle;
+    return 50000;
 }
