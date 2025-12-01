@@ -1,12 +1,27 @@
+use std::io::{self, Write};
 use u_ai::llm_engine::LLmEngine;
 
 fn main() {
-    let args: Vec<String> = std::env::args().collect();
-    let input = args.get(1).map(String::as_str).unwrap_or("hello world");
-
     let engine = LLmEngine::new("model.tmod", "model.spm");
-    let output = engine.predict(input);
 
-    println!("Input:  {}", input);
-    println!("Reply:  {}", output);
+    println!("=== Unhidra Chat ===");
+    println!("Type your message and press Enter (type 'exit' to quit)\n");
+
+    loop {
+        print!("You: ");
+        io::stdout().flush().unwrap();
+
+        let mut input = String::new();
+        if io::stdin().read_line(&mut input).is_err() {
+            break;
+        }
+        let input = input.trim();
+        if input.eq_ignore_ascii_case("exit") {
+            println!("Exiting chat...");
+            break;
+        }
+
+        let reply = engine.predict(input);
+        println!("Unhidra: {}", reply);
+    }
 }
