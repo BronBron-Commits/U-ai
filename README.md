@@ -1,50 +1,45 @@
-# Lavalamp Webcam Entropy Experiment
+# U-ai
 
-This project generates entropy bytes from a webcam feed and writes them into a named pipe.  
-Other programs, such as U-ai, can read these bytes to introduce external randomness.
+U-ai is a small experimental AI project written in Rust.  
+It provides a lightweight text interface and can use an external entropy source when available.
 
-## Purpose
+## Features
 
-The goal is to create a simple real-world entropy source using webcam pixel data.  
-This is meant for experimentation and not for cryptographic use.
-
-## How It Works
-
-1. The Python script opens the webcam.
-2. Each frame is sampled by averaging pixel intensity.
-3. One entropy byte is derived.
-4. The byte is written into:
-
-       /tmp/unhidra_entropy.pipe
-
-5. Any external program can read from this pipe continuously.
+- Custom tokenizer using SentencePiece.
+- Simple terminal chat interface.
+- Optional entropy integration through a named pipe.
+- Compact and easy-to-read project structure.
 
 ## Running
 
-Create the pipe:
+To run with an initial message:
 
-    rm -f /tmp/unhidra_entropy.pipe
-    mkfifo /tmp/unhidra_entropy.pipe
+    cargo run -- "your message"
 
-Start the entropy streamer:
+To start interactive mode:
 
-    python3 src/entropy_pipe.py
+    cargo run
 
-It will run continuously and write one byte at a time.
+## Entropy Integration
 
-## Requirements
+If a named pipe exists at:
 
-- Python 3
-- OpenCV (opencv-python)
-- NumPy
-- A working webcam
+    /tmp/unhidra_entropy.pipe
+
+U-ai will read one byte from it before producing a response.  
+If no pipe exists, U-ai falls back to pseudorandom behavior.
 
 ## Project Structure
 
-- src/entropy_pipe.py — main entropy generator.
-- src/modules/camera_capture.py — webcam utilities.
-- src/modules/entropy_pool.py — simple entropy processing logic.
+- src/tokenizer – SentencePiece-related code.
+- src/entropy.rs – optional entropy helper.
+- src/main.rs – CLI entry point.
+- src/lib.rs – main engine.
 
-## Notes
+## Requirements
 
-This entropy system is experimental and not designed for security-critical randomness.
+- Rust toolchain  
+- SentencePiece C libraries installed  
+- Optional external entropy source writing to `/tmp/unhidra_entropy.pipe`
+
+## License
